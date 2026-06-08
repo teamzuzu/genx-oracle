@@ -1,0 +1,9 @@
+.env
+.txline-credentials.json
+wallet.json
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+*.egg-info/
+txline/idl/
