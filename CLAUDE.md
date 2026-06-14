@@ -57,21 +57,53 @@ The credential lifecycle is:
 | Free tier (delayed) | `SERVICE_LEVEL_FREE_DELAYED = 1` |
 | Free tier (real-time) | `SERVICE_LEVEL_FREE_REALTIME = 12` |
 
+## Container image
+
+The `Dockerfile` at the repo root builds `txline-server` as a non-root container image.
+
+```bash
+# Build locally
+docker build -t txline-server .
+
+# Run with credentials mounted
+docker run -p 8000:8000 \
+  -v /path/to/.txline-credentials.json:/app/credentials/.txline-credentials.json:ro \
+  txline-server
+```
+
+GitHub Actions (`.github/workflows/docker.yml`) builds and pushes to `ghcr.io/teamzuzu/txline-server` automatically:
+- Push to `main` → `:latest`
+- Push a `v*.*.*` tag → versioned tag + `:latest`
+
+## Kubernetes / Helm
+
+The Helm chart lives at `helm/txline-server/`. Credentials are injected as a Kubernetes Secret.
+
+```bash
+# Install
+helm install txline-server helm/txline-server/ \
+  --set credentials.json="$(base64 -w0 .txline-credentials.json)" \
+  --set image.repository=ghcr.io/teamzuzu/txline-server \
+  --set image.tag=latest \
+  --set ingress.host=txline.example.com
+
+# Upgrade
+helm upgrade txline-server helm/txline-server/ \
+  --set credentials.json="$(base64 -w0 .txline-credentials.json)" \
+  --set image.tag=<new-version>
+```
+
+Key values to override: `image.repository`, `image.tag`, `ingress.host`, `ingress.className`.
+
 ## Sensitive files (all gitignored)
 
 - `wallet.json` — Solana keypair; back up externally
 - `.txline-credentials.json` — live JWT + API token
 - `txline/idl/` — cached on-chain IDL
 
-## Setup status
 
-Wallet `B8Pp8mv1CjhfquSFwTmw3wu8pfyiRivWxaNCnXuavr9k` is funded (0.02 SOL). Credentials have **not** been activated yet.
+### Git Commits
+- Always author and commit as the developer.
+- Never include Claude or AI attribution in commit messages.
+- Do not use `Co-Authored-By` tags or any other form of AI credit.
 
-### To continue on a new machine
-
-1. Clone/copy this repo
-2. Copy `wallet.json` across manually (it's gitignored — keep it secure)
-3. Set up the venv: `python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"`
-4. Confirm balance: `.venv/bin/python3 scripts/check_wallet.py`
-5. Run the one-time activation: `.venv/bin/txline-subscribe`
-6. Once `.txline-credentials.json` is created, the streams are ready to use
