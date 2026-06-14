@@ -20,6 +20,9 @@ dependencies = [
     "anchorpy>=0.20",
     "click>=8.1",
     "rich>=13.0",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.29",
+    "sse-starlette>=1.6",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +35,7 @@ dev = [
 [project.scripts]
 txline-subscribe = "txline.cli.subscribe:main"
 txline-stream = "txline.cli.stream:main"
+txline-server = "txline.api.server:cli"
 
 [tool.ruff]
 target-version = "py311"
