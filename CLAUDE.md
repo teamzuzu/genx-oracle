@@ -93,6 +93,26 @@ helm upgrade txline-server helm/txline-server/ \
   --set image.tag=<new-version>
 ```
 
+### Published Helm repository
+
+Once GitHub Pages is enabled (Settings → Pages → `gh-pages` / root), the chart is available at:
+
+```bash
+helm repo add txline https://teamzuzu.github.io/genx-oracle
+helm repo update
+helm install txline-server txline/txline-server \
+  --set credentials.json="$(base64 -w0 .txline-credentials.json)" \
+  --set image.tag=1.0.0 \
+  --set ingress.host=txline.example.com
+```
+
+### Release checklist (before tagging)
+
+1. Bump `version` and `appVersion` in `helm/txline-server/Chart.yaml` to match the release (e.g. `1.0.0`)
+2. Commit: `git commit -m "chore: bump chart to 1.0.0"`
+3. Tag: `git tag v1.0.0 && git push origin v1.0.0`
+4. Both `docker.yml` and `helm-release.yml` workflows fire automatically
+
 Key values to override: `image.repository`, `image.tag`, `ingress.host`, `ingress.className`.
 
 ## Sensitive files (all gitignored)
