@@ -29,6 +29,10 @@ python3 -m venv .venv
 .venv/bin/txline-stream scores --fixture-id 12345
 .venv/bin/txline-stream fixtures    # REST snapshot
 
+# Server (FastAPI SSE proxy for browser clients)
+.venv/bin/txline-server                          # start on 0.0.0.0:8000
+.venv/bin/txline-server --port 9000              # custom port
+
 # Wallet helpers (scripts run directly, not entry points)
 .venv/bin/python3 scripts/generate_wallet.py
 .venv/bin/python3 scripts/check_wallet.py
@@ -49,7 +53,7 @@ The credential lifecycle is:
 | Name | Value |
 |------|-------|
 | Program ID | `9ExbZjAapQww1vfcisDmrngPinHTEfpjYRWMunJgcKaA` |
-| TxL mint | `sLX1i9dfmsuyFBmJTWuGjjRmG4VPWYK6dRRKSM4BCSx` |
+| TxL mint | `Zhw9TVKp68a1QrftncMSd6ELXKDtpVMNuMGr1jNwdeL` (Token-2022) |
 | Free tier (delayed) | `SERVICE_LEVEL_FREE_DELAYED = 1` |
 | Free tier (real-time) | `SERVICE_LEVEL_FREE_REALTIME = 12` |
 
@@ -58,3 +62,16 @@ The credential lifecycle is:
 - `wallet.json` — Solana keypair; back up externally
 - `.txline-credentials.json` — live JWT + API token
 - `txline/idl/` — cached on-chain IDL
+
+## Setup status
+
+Wallet `B8Pp8mv1CjhfquSFwTmw3wu8pfyiRivWxaNCnXuavr9k` is funded (0.02 SOL). Credentials have **not** been activated yet.
+
+### To continue on a new machine
+
+1. Clone/copy this repo
+2. Copy `wallet.json` across manually (it's gitignored — keep it secure)
+3. Set up the venv: `python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"`
+4. Confirm balance: `.venv/bin/python3 scripts/check_wallet.py`
+5. Run the one-time activation: `.venv/bin/txline-subscribe`
+6. Once `.txline-credentials.json` is created, the streams are ready to use
