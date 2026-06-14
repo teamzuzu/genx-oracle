@@ -1,0 +1,13 @@
+.git
+.venv
+__pycache__
+*.pyc
+*.egg-info
+dist
+.pytest_cache
+wallet.json
+.txline-credentials.json
+txline/idl/
+scripts/
+tests/
+docs/
