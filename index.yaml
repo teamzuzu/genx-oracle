@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  txline-server:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2026-06-14T22:07:17.494674849Z"
+    description: TxLINE SSE proxy server
+    digest: 4117ee32e2fed9da13f326a340c193bc783d58931aeec5e9f03db04e68d5c811
+    name: txline-server
+    type: application
+    urls:
+    - https://github.com/teamzuzu/genx-oracle/releases/download/txline-server-0.0.1/txline-server-0.0.1.tgz
+    version: 0.0.1
+generated: "2026-06-14T22:07:17.494255177Z"
