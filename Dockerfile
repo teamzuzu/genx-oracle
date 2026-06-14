@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir \
 COPY txline/ txline/
 RUN pip install --no-cache-dir --no-deps .
 
-RUN useradd --no-create-home --shell /bin/false appuser \
+RUN useradd --uid 1000 --no-create-home --shell /bin/false appuser \
     && mkdir -p /app/credentials \
     && chown appuser:appuser /app/credentials
 
