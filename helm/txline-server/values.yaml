@@ -1,0 +1,23 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/OWNER/txline-server  # replace OWNER with your GitHub org or username
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: txline.example.com
+  # tls:
+  #   - secretName: txline-tls
+  #     hosts:
+  #       - txline.example.com
+
+credentials:
+  json: ""  # Required: base64-encoded .txline-credentials.json
+            # Provide at install time: --set credentials.json="$(base64 -w0 .txline-credentials.json)"
