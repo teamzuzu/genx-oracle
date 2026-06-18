@@ -38,7 +38,6 @@ def test_fixture_state_defaults():
     assert fs.competition == "—"
     assert fs.score == "—"
     assert fs.game_state == "—"
-    assert fs.bookmaker == "—"
     assert fs.market == "—"
     assert fs.prices == "—"
     assert fs.updated == ""
@@ -48,7 +47,7 @@ def test_build_table_columns():
     t = build_table({})
     cols = [c.header for c in t.columns]
     assert cols == ["Fixture", "Competition", "Score", "State",
-                    "Bookmaker", "Market", "Prices", "Updated"]
+                    "Market", "Prices", "Updated"]
 
 
 def test_build_table_empty():
@@ -59,7 +58,7 @@ def test_build_table_empty():
 def test_build_table_one_row():
     fs = FixtureState(fixture_id=1, name="A vs B", competition="PL",
                       score="2 – 1", game_state="SecondHalf",
-                      bookmaker="BK", market="1X2", prices="[150, 200]",
+                      market="1X2", prices="1.50  2.00",
                       updated="12:00:00")
     t = build_table({1: fs})
     assert t.row_count == 1
@@ -98,7 +97,6 @@ def test_apply_event_odds_creates_row():
     cache: dict = {}
     apply_event(_odds_update(), state, cache, "10:00:00")
     assert 1 in state
-    assert state[1].bookmaker == "BetX"
     assert state[1].market == "1X2"
 
 
@@ -106,7 +104,7 @@ def test_apply_event_odds_prices():
     state: dict = {}
     cache: dict = {}
     apply_event(_odds_update(Prices=[150, 300, 200]), state, cache, "10:00:00")
-    assert state[1].prices == "[150, 300, 200]"
+    assert state[1].prices == "1.50  3.00  2.00"
 
 
 def test_apply_event_odds_no_prices():

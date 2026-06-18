@@ -24,7 +24,6 @@ class FixtureState:
     competition: str = "—"
     score: str = "—"
     game_state: str = "—"
-    bookmaker: str = "—"
     market: str = "—"
     prices: str = "—"
     updated: str = ""
@@ -41,17 +40,20 @@ def parse_score(event: ScoreUpdate) -> str:
 
 
 def build_table(state: dict[int, FixtureState]) -> Table:
-    t = Table(title="TxLINE Live", show_lines=True)
-    for col in ("Fixture", "Competition", "Score", "State",
-                "Bookmaker", "Market", "Prices", "Updated"):
-        t.add_column(col)
+    t = Table(title="[bold cyan]TxLINE Live[/bold cyan]", show_lines=True)
+    t.add_column("Fixture", style="bold")
+    t.add_column("Competition", style="dim")
+    t.add_column("Score", style="bold green")
+    t.add_column("State", style="yellow")
+    t.add_column("Market", style="dim")
+    t.add_column("Prices", style="bright_white")
+    t.add_column("Updated", style="dim")
     for fs in sorted(state.values(), key=lambda x: x.fixture_id):
         t.add_row(
             fs.name,
             fs.competition,
             fs.score,
             fs.game_state,
-            fs.bookmaker,
             fs.market,
             fs.prices,
             fs.updated,
@@ -78,9 +80,8 @@ def apply_event(
         fs.competition = fix.Competition
 
     if isinstance(event, OddsUpdate):
-        fs.bookmaker = event.Bookmaker
         fs.market = event.SuperOddsType
-        fs.prices = str(event.Prices) if event.Prices else "—"
+        fs.prices = "  ".join(f"{p/100:.2f}" for p in event.Prices) if event.Prices else "—"
     else:
         fs.score = parse_score(event)
         fs.game_state = event.gameState
