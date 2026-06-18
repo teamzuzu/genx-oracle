@@ -1,17 +1,17 @@
 """CLI: txline-watch — live dashboard combining odds and scores streams."""
 
-import asyncio  # noqa: F401
+import asyncio
 from dataclasses import dataclass
-from datetime import datetime  # noqa: F401
+from datetime import datetime
 from pathlib import Path  # noqa: F401
-from typing import Optional  # noqa: F401
+from typing import Optional
 
 import click  # noqa: F401
 from rich.console import Console
-from rich.live import Live  # noqa: F401
+from rich.live import Live
 from rich.table import Table
 
-from txline.client import TxLineClient  # noqa: F401
+from txline.client import TxLineClient
 from txline.models import Fixture, Heartbeat, OddsUpdate, ScoreUpdate
 
 console = Console()
@@ -124,7 +124,8 @@ async def _run(client: TxLineClient, fixture_id: Optional[int]) -> None:
     state: dict[int, FixtureState] = {}
     fixtures_cache: dict[int, Fixture] = {}
     fixtures_fetching = False
-    queue: asyncio.Queue = asyncio.Queue()
+    queue: asyncio.Queue[OddsUpdate | ScoreUpdate] = asyncio.Queue()
+    _bg_tasks: set = set()
 
     async def _display_loop() -> None:
         nonlocal fixtures_fetching
@@ -135,7 +136,9 @@ async def _run(client: TxLineClient, fixture_id: Optional[int]) -> None:
                 apply_event(event, state, fixtures_cache, now)
                 if not fixtures_fetching:
                     fixtures_fetching = True
-                    asyncio.create_task(_fetch_fixtures(client, fixtures_cache))
+                    t = asyncio.create_task(_fetch_fixtures(client, fixtures_cache))
+                    _bg_tasks.add(t)
+                    t.add_done_callback(_bg_tasks.discard)
                 live.update(build_table(state))
 
     await asyncio.gather(
