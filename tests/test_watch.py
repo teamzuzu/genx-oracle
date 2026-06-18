@@ -36,6 +36,7 @@ def test_parse_score_empty():
 def test_fixture_state_defaults():
     fs = FixtureState(fixture_id=99, name="99")
     assert fs.competition == "—"
+    assert fs.kickoff == "—"
     assert fs.score == "—"
     assert fs.game_state == "—"
     assert fs.market == "—"
@@ -47,7 +48,7 @@ def test_fixture_state_defaults():
 def test_build_table_columns():
     t = build_table({})
     cols = [c.header for c in t.columns]
-    assert cols == ["Fixture", "Competition", "Score", "State",
+    assert cols == ["Fixture", "Competition", "Kickoff", "Score", "State",
                     "Market", "Prices", "Pct", "Updated"]
 
 
@@ -58,8 +59,8 @@ def test_build_table_empty():
 
 def test_build_table_one_row():
     fs = FixtureState(fixture_id=1, name="A vs B", competition="PL",
-                      score="2 – 1", game_state="SecondHalf",
-                      market="1X2", prices="1:1.50  X:3.00  2:2.00",
+                      kickoff="18 Jun 14:00", score="2 – 1", game_state="SecondHalf",
+                      market="1X2", prices="part1:1.500  draw:2.400  part2:5.500",
                       pct="66.67%  33.33%  50.00%", updated="12:00:00")
     t = build_table({1: fs})
     assert t.row_count == 1
@@ -104,8 +105,8 @@ def test_apply_event_odds_creates_row():
 def test_apply_event_odds_prices():
     state: dict = {}
     cache: dict = {}
-    apply_event(_odds_update(Prices=[150, 300, 200]), state, cache, "10:00:00")
-    assert state[1].prices == "1.50  3.00  2.00"
+    apply_event(_odds_update(Prices=[1500, 3000, 2000]), state, cache, "10:00:00")
+    assert state[1].prices == "1.500  3.000  2.000"
 
 
 def test_apply_event_odds_no_prices():
@@ -148,9 +149,9 @@ def test_apply_event_returns_fixture_id():
 
 def test_apply_event_odds_labeled_prices():
     state: dict = {}
-    apply_event(_odds_update(Prices=[150, 300, 200], PriceNames=["1", "X", "2"]),
+    apply_event(_odds_update(Prices=[1788, 2269], PriceNames=["over", "under"]),
                 state, {}, "10:00:00")
-    assert state[1].prices == "1:1.50  X:3.00  2:2.00"
+    assert state[1].prices == "over:1.788  under:2.269"
 
 
 def test_apply_event_odds_pct():

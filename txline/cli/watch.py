@@ -22,6 +22,7 @@ class FixtureState:
     fixture_id: int
     name: str
     competition: str = "—"
+    kickoff: str = "—"
     score: str = "—"
     game_state: str = "—"
     market: str = "—"
@@ -44,17 +45,19 @@ def build_table(state: dict[int, FixtureState], flash_fid: int | None = None) ->
     t = Table(title="[bold cyan]TxLINE Live[/bold cyan]", show_lines=True)
     t.add_column("Fixture", style="bold")
     t.add_column("Competition", style="dim")
+    t.add_column("Kickoff", style="dim")
     t.add_column("Score", style="bold green")
     t.add_column("State", style="yellow")
     t.add_column("Market", style="dim")
     t.add_column("Prices", style="bright_white")
-    t.add_column("Pct", style="dim cyan")
+    t.add_column("Pct", style="cyan")
     t.add_column("Updated", style="dim")
     for fs in sorted(state.values(), key=lambda x: x.fixture_id):
-        row_style = "on dark_orange3" if fs.fixture_id == flash_fid else None
+        row_style = "bold" if fs.fixture_id == flash_fid else None
         t.add_row(
             fs.name,
             fs.competition,
+            fs.kickoff,
             fs.score,
             fs.game_state,
             fs.market,
@@ -83,16 +86,17 @@ def apply_event(
         fix = fixtures_cache[fid]
         fs.name = f"{fix.Participant1} vs {fix.Participant2}"
         fs.competition = fix.Competition
+        fs.kickoff = datetime.fromtimestamp(fix.StartTime / 1000).strftime("%d %b %H:%M")
 
     if isinstance(event, OddsUpdate):
         fs.market = event.SuperOddsType
         if event.Prices:
             if event.PriceNames:
                 fs.prices = "  ".join(
-                    f"{n}:{p/100:.2f}" for n, p in zip(event.PriceNames, event.Prices)
+                    f"{n}:{p/1000:.3f}" for n, p in zip(event.PriceNames, event.Prices)
                 )
             else:
-                fs.prices = "  ".join(f"{p/100:.2f}" for p in event.Prices)
+                fs.prices = "  ".join(f"{p/1000:.3f}" for p in event.Prices)
         else:
             fs.prices = "—"
         fs.pct = "  ".join(f"{p}%" for p in event.Pct) if event.Pct else "—"
