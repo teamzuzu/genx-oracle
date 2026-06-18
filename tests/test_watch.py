@@ -1,5 +1,4 @@
 """Tests for txline-watch logic — no network calls."""
-from rich.table import Table
 from txline.cli.watch import FixtureState, parse_score, build_table
 from txline.models import ScoreUpdate
 
