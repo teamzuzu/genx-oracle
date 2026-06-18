@@ -29,6 +29,10 @@ python3 -m venv .venv
 .venv/bin/txline-stream scores --fixture-id 12345
 .venv/bin/txline-stream fixtures    # REST snapshot
 
+# Watch dashboard (live odds + scores combined, Rich.Live TUI)
+.venv/bin/txline-watch                           # all fixtures
+.venv/bin/txline-watch --fixture-id 12345        # filter to one fixture
+
 # Server (FastAPI SSE proxy for browser clients)
 .venv/bin/txline-server                          # start on 0.0.0.0:8000
 .venv/bin/txline-server --port 9000              # custom port
@@ -45,6 +49,8 @@ The credential lifecycle is:
 2. **Runtime** — `TxLineClient` loads credentials from that file and uses `Authorization: Bearer {jwt}` + `X-Api-Token: {api_token}` on every request.
 
 **SSE streaming** (`txline/streams/`) uses `httpx-sse`. Both streams (`/api/odds/stream`, `/api/scores/stream`) support optional `fixtureId` filtering and reconnect via `Last-Event-ID`. Streams yield typed Pydantic models (`OddsUpdate | Heartbeat`, `ScoreUpdate | Heartbeat`).
+
+**`txline-watch`** (`txline/cli/watch.py`) fans odds and scores SSE streams into an `asyncio.Queue`, applies events to a `dict[int, FixtureState]` via `apply_event`, and renders a `Rich.Live` table via `build_table`. Fixture names are resolved lazily from a one-shot REST snapshot fetch. Prices are stored as integers and displayed as decimal odds (÷ 100).
 
 **The Anchor IDL** (`txline/idl/txline.json`) is fetched from the chain on first run via `anchorpy._fetch_idl` and cached locally. The directory is gitignored. If on-chain fetch fails, place the IDL file there manually.
 
