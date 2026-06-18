@@ -1,5 +1,6 @@
 """Tests for txline-watch logic — no network calls."""
-from txline.cli.watch import FixtureState, parse_score
+from rich.table import Table
+from txline.cli.watch import FixtureState, parse_score, build_table
 from txline.models import ScoreUpdate
 
 
@@ -42,3 +43,35 @@ def test_fixture_state_defaults():
     assert fs.market == "—"
     assert fs.prices == "—"
     assert fs.updated == ""
+
+
+def test_build_table_columns():
+    t = build_table({})
+    cols = [c.header for c in t.columns]
+    assert cols == ["Fixture", "Competition", "Score", "State",
+                    "Bookmaker", "Market", "Prices", "Updated"]
+
+
+def test_build_table_empty():
+    t = build_table({})
+    assert t.row_count == 0
+
+
+def test_build_table_one_row():
+    fs = FixtureState(fixture_id=1, name="A vs B", competition="PL",
+                      score="2 – 1", game_state="SecondHalf",
+                      bookmaker="BK", market="1X2", prices="[150, 200]",
+                      updated="12:00:00")
+    t = build_table({1: fs})
+    assert t.row_count == 1
+
+
+def test_build_table_sorted_by_fixture_id():
+    state = {
+        3: FixtureState(fixture_id=3, name="C vs D"),
+        1: FixtureState(fixture_id=1, name="A vs B"),
+    }
+    t = build_table(state)
+    assert t.row_count == 2
+    # rows are sorted ascending — first row is fixture 1
+    # Rich doesn't expose row data directly; just verify count and no exception

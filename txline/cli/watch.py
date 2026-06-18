@@ -9,7 +9,7 @@ from typing import Optional  # noqa: F401
 import click  # noqa: F401
 from rich.console import Console  # noqa: F401
 from rich.live import Live  # noqa: F401
-from rich.table import Table  # noqa: F401
+from rich.table import Table
 
 from txline.client import TxLineClient  # noqa: F401
 from txline.models import ScoreUpdate
@@ -37,3 +37,22 @@ def parse_score(event: ScoreUpdate) -> str:
     if event.score:
         return str(event.score)
     return "—"
+
+
+def build_table(state: dict[int, FixtureState]) -> Table:
+    t = Table(title="TxLINE Live", show_lines=True)
+    for col in ("Fixture", "Competition", "Score", "State",
+                "Bookmaker", "Market", "Prices", "Updated"):
+        t.add_column(col)
+    for fs in sorted(state.values(), key=lambda x: x.fixture_id):
+        t.add_row(
+            fs.name,
+            fs.competition,
+            fs.score,
+            fs.game_state,
+            fs.bookmaker,
+            fs.market,
+            fs.prices,
+            fs.updated,
+        )
+    return t
