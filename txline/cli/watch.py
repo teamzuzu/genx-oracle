@@ -12,8 +12,9 @@ from rich.live import Live  # noqa: F401
 from rich.table import Table
 
 from txline.client import TxLineClient  # noqa: F401
-from txline.models import ScoreUpdate
-from txline.models import Fixture, OddsUpdate
+from txline.models import Fixture, Heartbeat, OddsUpdate, ScoreUpdate
+
+console = Console()
 
 
 @dataclass
@@ -86,3 +87,59 @@ def apply_event(
 
     fs.updated = now
     return fid
+
+
+async def _fetch_fixtures(
+    client: TxLineClient,
+    cache: dict[int, Fixture],
+) -> None:
+    try:
+        for f in await client.fixtures():
+            cache[f.FixtureId] = f
+    except Exception:
+        pass  # dashboard continues with raw fixture IDs
+
+
+async def _odds_task(
+    client: TxLineClient,
+    fixture_id: Optional[int],
+    queue: asyncio.Queue,
+) -> None:
+    async for event in client.odds(fixture_id=fixture_id):
+        if not isinstance(event, Heartbeat):
+            await queue.put(event)
+
+
+async def _scores_task(
+    client: TxLineClient,
+    fixture_id: Optional[int],
+    queue: asyncio.Queue,
+) -> None:
+    async for event in client.scores(fixture_id=fixture_id):
+        if not isinstance(event, Heartbeat):
+            await queue.put(event)
+
+
+async def _run(client: TxLineClient, fixture_id: Optional[int]) -> None:
+    state: dict[int, FixtureState] = {}
+    fixtures_cache: dict[int, Fixture] = {}
+    fixtures_fetching = False
+    queue: asyncio.Queue = asyncio.Queue()
+
+    async def _display_loop() -> None:
+        nonlocal fixtures_fetching
+        with Live(build_table(state), console=console, refresh_per_second=4) as live:
+            while True:
+                event = await queue.get()
+                now = datetime.now().strftime("%H:%M:%S")
+                apply_event(event, state, fixtures_cache, now)
+                if not fixtures_fetching:
+                    fixtures_fetching = True
+                    asyncio.create_task(_fetch_fixtures(client, fixtures_cache))
+                live.update(build_table(state))
+
+    await asyncio.gather(
+        _odds_task(client, fixture_id, queue),
+        _scores_task(client, fixture_id, queue),
+        _display_loop(),
+    )
