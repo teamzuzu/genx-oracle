@@ -40,6 +40,7 @@ def test_fixture_state_defaults():
     assert fs.game_state == "—"
     assert fs.market == "—"
     assert fs.prices == "—"
+    assert fs.pct == "—"
     assert fs.updated == ""
 
 
@@ -47,7 +48,7 @@ def test_build_table_columns():
     t = build_table({})
     cols = [c.header for c in t.columns]
     assert cols == ["Fixture", "Competition", "Score", "State",
-                    "Market", "Prices", "Updated"]
+                    "Market", "Prices", "Pct", "Updated"]
 
 
 def test_build_table_empty():
@@ -58,8 +59,8 @@ def test_build_table_empty():
 def test_build_table_one_row():
     fs = FixtureState(fixture_id=1, name="A vs B", competition="PL",
                       score="2 – 1", game_state="SecondHalf",
-                      market="1X2", prices="1.50  2.00",
-                      updated="12:00:00")
+                      market="1X2", prices="1:1.50  X:3.00  2:2.00",
+                      pct="66.67%  33.33%  50.00%", updated="12:00:00")
     t = build_table({1: fs})
     assert t.row_count == 1
 
@@ -143,3 +144,28 @@ def test_apply_event_returns_fixture_id():
     state: dict = {}
     fid = apply_event(_odds_update(FixtureId=7), state, {}, "12:00:00")
     assert fid == 7
+
+
+def test_apply_event_odds_labeled_prices():
+    state: dict = {}
+    apply_event(_odds_update(Prices=[150, 300, 200], PriceNames=["1", "X", "2"]),
+                state, {}, "10:00:00")
+    assert state[1].prices == "1:1.50  X:3.00  2:2.00"
+
+
+def test_apply_event_odds_pct():
+    state: dict = {}
+    apply_event(_odds_update(Pct=["66.67", "33.33", "50.00"]), state, {}, "10:00:00")
+    assert state[1].pct == "66.67%  33.33%  50.00%"
+
+
+def test_apply_event_odds_pct_none():
+    state: dict = {}
+    apply_event(_odds_update(Pct=None), state, {}, "10:00:00")
+    assert state[1].pct == "—"
+
+
+def test_build_table_flash_fid():
+    state = {1: FixtureState(fixture_id=1, name="A vs B")}
+    t = build_table(state, flash_fid=1)
+    assert t.row_count == 1  # highlighted row still renders

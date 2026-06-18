@@ -26,6 +26,7 @@ class FixtureState:
     game_state: str = "—"
     market: str = "—"
     prices: str = "—"
+    pct: str = "—"
     updated: str = ""
 
 
@@ -39,7 +40,7 @@ def parse_score(event: ScoreUpdate) -> str:
     return "—"
 
 
-def build_table(state: dict[int, FixtureState]) -> Table:
+def build_table(state: dict[int, FixtureState], flash_fid: int | None = None) -> Table:
     t = Table(title="[bold cyan]TxLINE Live[/bold cyan]", show_lines=True)
     t.add_column("Fixture", style="bold")
     t.add_column("Competition", style="dim")
@@ -47,8 +48,10 @@ def build_table(state: dict[int, FixtureState]) -> Table:
     t.add_column("State", style="yellow")
     t.add_column("Market", style="dim")
     t.add_column("Prices", style="bright_white")
+    t.add_column("Pct", style="dim cyan")
     t.add_column("Updated", style="dim")
     for fs in sorted(state.values(), key=lambda x: x.fixture_id):
+        row_style = "on dark_orange3" if fs.fixture_id == flash_fid else None
         t.add_row(
             fs.name,
             fs.competition,
@@ -56,7 +59,9 @@ def build_table(state: dict[int, FixtureState]) -> Table:
             fs.game_state,
             fs.market,
             fs.prices,
+            fs.pct,
             fs.updated,
+            style=row_style,
         )
     return t
 
@@ -81,7 +86,16 @@ def apply_event(
 
     if isinstance(event, OddsUpdate):
         fs.market = event.SuperOddsType
-        fs.prices = "  ".join(f"{p/100:.2f}" for p in event.Prices) if event.Prices else "—"
+        if event.Prices:
+            if event.PriceNames:
+                fs.prices = "  ".join(
+                    f"{n}:{p/100:.2f}" for n, p in zip(event.PriceNames, event.Prices)
+                )
+            else:
+                fs.prices = "  ".join(f"{p/100:.2f}" for p in event.Prices)
+        else:
+            fs.prices = "—"
+        fs.pct = "  ".join(f"{p}%" for p in event.Pct) if event.Pct else "—"
     else:
         fs.score = parse_score(event)
         fs.game_state = event.gameState
@@ -130,17 +144,18 @@ async def _run(client: TxLineClient, fixture_id: Optional[int]) -> None:
 
     async def _display_loop() -> None:
         nonlocal fixtures_fetching
+        last_fid: int | None = None
         with Live(build_table(state), console=console, refresh_per_second=4) as live:
             while True:
                 event = await queue.get()
                 now = datetime.now().strftime("%H:%M:%S")
-                apply_event(event, state, fixtures_cache, now)
+                last_fid = apply_event(event, state, fixtures_cache, now)
                 if not fixtures_fetching:
                     fixtures_fetching = True
                     t = asyncio.create_task(_fetch_fixtures(client, fixtures_cache))
                     _bg_tasks.add(t)
                     t.add_done_callback(_bg_tasks.discard)
-                live.update(build_table(state))
+                live.update(build_table(state, flash_fid=last_fid))
 
     await asyncio.gather(
         _odds_task(client, fixture_id, queue),
