@@ -13,7 +13,7 @@ from rich.table import Table
 
 from txline.client import TxLineClient  # noqa: F401
 from txline.models import ScoreUpdate
-from txline.models import Fixture, Heartbeat, OddsUpdate  # noqa: F401
+from txline.models import Fixture, OddsUpdate
 
 
 @dataclass
@@ -56,3 +56,33 @@ def build_table(state: dict[int, FixtureState]) -> Table:
             fs.updated,
         )
     return t
+
+
+def apply_event(
+    event: OddsUpdate | ScoreUpdate,
+    state: dict[int, FixtureState],
+    fixtures_cache: dict[int, Fixture],
+    now: str,
+) -> int:
+    fid = event.FixtureId if isinstance(event, OddsUpdate) else event.fixtureId
+
+    if fid not in state:
+        state[fid] = FixtureState(fixture_id=fid, name=str(fid), updated=now)
+
+    fs = state[fid]
+
+    if fs.name == str(fid) and fid in fixtures_cache:
+        fix = fixtures_cache[fid]
+        fs.name = f"{fix.Participant1} vs {fix.Participant2}"
+        fs.competition = fix.Competition
+
+    if isinstance(event, OddsUpdate):
+        fs.bookmaker = event.Bookmaker
+        fs.market = event.SuperOddsType
+        fs.prices = str(event.Prices) if event.Prices else "—"
+    else:
+        fs.score = parse_score(event)
+        fs.game_state = event.gameState
+
+    fs.updated = now
+    return fid

@@ -1,6 +1,6 @@
 """Tests for txline-watch logic — no network calls."""
-from txline.cli.watch import FixtureState, parse_score, build_table
-from txline.models import ScoreUpdate
+from txline.cli.watch import FixtureState, parse_score, build_table, apply_event
+from txline.models import ScoreUpdate, OddsUpdate, Fixture
 
 
 def _score_update(**kwargs) -> ScoreUpdate:
@@ -74,3 +74,74 @@ def test_build_table_sorted_by_fixture_id():
     assert t.row_count == 2
     # rows are sorted ascending — first row is fixture 1
     # Rich doesn't expose row data directly; just verify count and no exception
+
+
+def _odds_update(**kwargs) -> OddsUpdate:
+    defaults = dict(
+        FixtureId=1, MessageId="m1", Ts=0, Bookmaker="BetX",
+        BookmakerId=1, SuperOddsType="1X2", InRunning=True,
+    )
+    return OddsUpdate(**{**defaults, **kwargs})
+
+
+def _fixture(fid=1, p1="Home", p2="Away", comp="PL") -> Fixture:
+    return Fixture(
+        Ts=0, StartTime=0, Competition=comp, CompetitionId=1,
+        FixtureGroupId=1, Participant1Id=10, Participant1=p1,
+        Participant2Id=20, Participant2=p2, FixtureId=fid,
+        Participant1IsHome=True,
+    )
+
+
+def test_apply_event_odds_creates_row():
+    state: dict = {}
+    cache: dict = {}
+    apply_event(_odds_update(), state, cache, "10:00:00")
+    assert 1 in state
+    assert state[1].bookmaker == "BetX"
+    assert state[1].market == "1X2"
+
+
+def test_apply_event_odds_prices():
+    state: dict = {}
+    cache: dict = {}
+    apply_event(_odds_update(Prices=[150, 300, 200]), state, cache, "10:00:00")
+    assert state[1].prices == "[150, 300, 200]"
+
+
+def test_apply_event_odds_no_prices():
+    state: dict = {}
+    cache: dict = {}
+    apply_event(_odds_update(Prices=None), state, cache, "10:00:00")
+    assert state[1].prices == "—"
+
+
+def test_apply_event_score_updates_row():
+    state: dict = {}
+    cache: dict = {}
+    ev = _score_update(fixtureId=2, gameState="SecondHalf",
+                       scoreSoccer={"Home": 1, "Away": 0})
+    apply_event(ev, state, cache, "11:00:00")
+    assert state[2].score == "1 – 0"
+    assert state[2].game_state == "SecondHalf"
+
+
+def test_apply_event_resolves_name_from_cache():
+    state: dict = {}
+    cache = {1: _fixture(fid=1, p1="Arsenal", p2="Chelsea", comp="PL")}
+    apply_event(_odds_update(FixtureId=1), state, cache, "12:00:00")
+    assert state[1].name == "Arsenal vs Chelsea"
+    assert state[1].competition == "PL"
+
+
+def test_apply_event_name_stays_raw_if_not_in_cache():
+    state: dict = {}
+    cache: dict = {}
+    apply_event(_odds_update(FixtureId=42), state, cache, "12:00:00")
+    assert state[42].name == "42"
+
+
+def test_apply_event_returns_fixture_id():
+    state: dict = {}
+    fid = apply_event(_odds_update(FixtureId=7), state, {}, "12:00:00")
+    assert fid == 7
