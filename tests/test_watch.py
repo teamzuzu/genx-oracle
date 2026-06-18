@@ -41,3 +41,4 @@ def test_fixture_state_defaults():
     assert fs.bookmaker == "—"
     assert fs.market == "—"
     assert fs.prices == "—"
+    assert fs.updated == ""

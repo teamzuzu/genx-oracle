@@ -1,18 +1,19 @@
 """CLI: txline-watch — live dashboard combining odds and scores streams."""
 
-import asyncio
+import asyncio  # noqa: F401
 from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
-from typing import Optional
+from datetime import datetime  # noqa: F401
+from pathlib import Path  # noqa: F401
+from typing import Optional  # noqa: F401
 
-import click
-from rich.console import Console
-from rich.live import Live
-from rich.table import Table
+import click  # noqa: F401
+from rich.console import Console  # noqa: F401
+from rich.live import Live  # noqa: F401
+from rich.table import Table  # noqa: F401
 
-from txline.client import TxLineClient
-from txline.models import Fixture, Heartbeat, OddsUpdate, ScoreUpdate
+from txline.client import TxLineClient  # noqa: F401
+from txline.models import ScoreUpdate
+from txline.models import Fixture, Heartbeat, OddsUpdate  # noqa: F401
 
 
 @dataclass
