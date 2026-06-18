@@ -3,10 +3,10 @@
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path  # noqa: F401
+from pathlib import Path
 from typing import Optional
 
-import click  # noqa: F401
+import click
 from rich.console import Console
 from rich.live import Live
 from rich.table import Table
@@ -146,3 +146,24 @@ async def _run(client: TxLineClient, fixture_id: Optional[int]) -> None:
         _scores_task(client, fixture_id, queue),
         _display_loop(),
     )
+
+
+@click.command()
+@click.option("--credentials", default=".txline-credentials.json", show_default=True)
+@click.option("--fixture-id", type=int, default=None, help="Filter to a single fixture")
+def main(credentials: str, fixture_id: Optional[int]) -> None:
+    """Live dashboard combining odds and scores streams."""
+    try:
+        client = TxLineClient.from_credentials_file(Path(credentials))
+    except FileNotFoundError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise SystemExit(1)
+
+    async def _go() -> None:
+        async with client:
+            await _run(client, fixture_id)
+
+    try:
+        asyncio.run(_go())
+    except KeyboardInterrupt:
+        pass
