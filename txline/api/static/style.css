@@ -1,0 +1,61 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  padding: 16px;
+}
+
+h1 {
+  color: #58a6ff;
+  font-size: 18px;
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 6px 10px;
+  text-align: left;
+  border: 1px solid #30363d;
+  white-space: nowrap;
+}
+
+thead th {
+  background: #161b22;
+  color: #8b949e;
+  font-weight: normal;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+tbody tr {
+  background: #0d1117;
+  transition: background 0.8s ease;
+}
+
+tbody tr:nth-child(even) {
+  background: #111820;
+}
+
+tbody tr.flash {
+  background: #1c2d3a;
+  transition: background 0s;
+}
+
+td.fix-name { font-weight: bold; }
+td.score    { color: #3fb950; font-weight: bold; }
+td.state    { color: #d29922; }
+td.prices   { color: #ffffff; }
+td.pct      { color: #58a6ff; }
+td.comp,
+td.kickoff,
+td.updated  { color: #8b949e; }
+td.market   { color: #8b949e; }
