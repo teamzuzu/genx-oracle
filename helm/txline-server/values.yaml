@@ -19,5 +19,10 @@ ingress:
   #       - txline.example.com
 
 credentials:
-  json: ""  # Required: base64-encoded .txline-credentials.json
-            # Provide at install time: --set credentials.json="$(base64 -w0 .txline-credentials.json)"
+  # Option A — inline JSON (base64-encoded), chart creates the Secret:
+  #   --set credentials.json="$(base64 -w0 .txline-credentials.json)"
+  json: ""
+  # Option B — reference a pre-existing Kubernetes Secret (no JSON needed at install time):
+  #   kubectl create secret generic my-txline-secret --from-file=.txline-credentials.json
+  #   --set credentials.existingSecret=my-txline-secret
+  existingSecret: ""

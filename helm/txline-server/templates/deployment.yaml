@@ -43,4 +43,4 @@ spec:
       volumes:
         - name: credentials
           secret:
-            secretName: {{ include "txline-server.fullname" . }}-credentials
+            secretName: {{ .Values.credentials.existingSecret | default (printf "%s-credentials" (include "txline-server.fullname" .)) }}

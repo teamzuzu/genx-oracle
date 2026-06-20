@@ -85,17 +85,41 @@ GitHub Actions (`.github/workflows/docker.yml`) builds and pushes to `ghcr.io/te
 
 The Helm chart lives at `helm/txline-server/`. Credentials are injected as a Kubernetes Secret.
 
+Two ways to supply credentials:
+
+**Option A — inline JSON (chart creates the Secret):**
 ```bash
-# Install
 helm install txline-server helm/txline-server/ \
   --set credentials.json="$(base64 -w0 .txline-credentials.json)" \
   --set image.repository=ghcr.io/teamzuzu/txline-server \
   --set image.tag=latest \
   --set ingress.host=txline.example.com
+```
 
-# Upgrade
+**Option B — pre-existing Secret (no JSON at install time):**
+```bash
+# Create the secret once (outside Helm lifecycle):
+kubectl create secret generic txline-credentials \
+  --from-file=.txline-credentials.json
+
+# Install without passing the JSON:
+helm install txline-server helm/txline-server/ \
+  --set credentials.existingSecret=txline-credentials \
+  --set image.repository=ghcr.io/teamzuzu/txline-server \
+  --set image.tag=latest \
+  --set ingress.host=txline.example.com
+```
+
+**Upgrade:**
+```bash
+# Option A:
 helm upgrade txline-server helm/txline-server/ \
   --set credentials.json="$(base64 -w0 .txline-credentials.json)" \
+  --set image.tag=<new-version>
+
+# Option B (secret already exists — no credentials needed):
+helm upgrade txline-server helm/txline-server/ \
+  --set credentials.existingSecret=txline-credentials \
   --set image.tag=<new-version>
 ```
 
@@ -107,7 +131,7 @@ Once GitHub Pages is enabled (Settings → Pages → `gh-pages` / root), the cha
 helm repo add txline https://teamzuzu.github.io/genx-oracle
 helm repo update
 helm install txline-server txline/txline-server \
-  --set credentials.json="$(base64 -w0 .txline-credentials.json)" \
+  --set credentials.existingSecret=txline-credentials \
   --set image.tag=1.0.0 \
   --set ingress.host=txline.example.com
 ```
