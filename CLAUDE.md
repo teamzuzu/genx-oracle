@@ -33,7 +33,7 @@ python3 -m venv .venv
 .venv/bin/txline-watch                           # all fixtures
 .venv/bin/txline-watch --fixture-id 12345        # filter to one fixture
 
-# Server (FastAPI SSE proxy for browser clients)
+# Server (FastAPI SSE proxy + web dashboard at http://localhost:8000)
 .venv/bin/txline-server                          # start on 0.0.0.0:8000
 .venv/bin/txline-server --port 9000              # custom port
 
@@ -51,6 +51,8 @@ The credential lifecycle is:
 **SSE streaming** (`txline/streams/`) uses `httpx-sse`. Both streams (`/api/odds/stream`, `/api/scores/stream`) support optional `fixtureId` filtering and reconnect via `Last-Event-ID`. Streams yield typed Pydantic models (`OddsUpdate | Heartbeat`, `ScoreUpdate | Heartbeat`).
 
 **`txline-watch`** (`txline/cli/watch.py`) fans odds and scores SSE streams into an `asyncio.Queue`, applies events to a `dict[int, FixtureState]` via `apply_event`, and renders a `Rich.Live` table via `build_table`. Fixture names are resolved lazily from a one-shot REST snapshot fetch. Prices are stored as integers and displayed as decimal odds (÷ 1000).
+
+**`txline-server`** (`txline/api/server.py`) is a FastAPI app that proxies the three TxLINE endpoints (`GET /fixtures`, `GET /odds/stream`, `GET /scores/stream`) and serves a vanilla JS browser dashboard at `/`. Static files live in `txline/api/static/` (`index.html`, `app.js`, `style.css`). The browser dashboard mirrors `txline-watch`: it fetches `/fixtures` on load for name resolution, then opens two `EventSource` connections and updates a live table with flash highlighting on each update. SSE events use named types (`event: odds`, `event: scores`, `event: heartbeat`). CORS is open (`allow_origins=["*"]`).
 
 **The Anchor IDL** (`txline/idl/txline.json`) is fetched from the chain on first run via `anchorpy._fetch_idl` and cached locally. The directory is gitignored. If on-chain fetch fails, place the IDL file there manually.
 
