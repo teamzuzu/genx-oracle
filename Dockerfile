@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir \
     "rich>=13.0" \
     "fastapi>=0.111" \
     "uvicorn[standard]>=0.29" \
-    "sse-starlette>=1.6"
+    "sse-starlette>=1.6" \
+    "aiofiles>=23.0"
 
 COPY txline/ txline/
 RUN pip install --no-cache-dir --no-deps .
