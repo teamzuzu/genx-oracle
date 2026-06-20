@@ -10,6 +10,7 @@ import httpx
 import uvicorn
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
 from txline.auth import load_credentials
@@ -57,6 +58,12 @@ def create_app(creds: TokenCredentials) -> FastAPI:
     @app.get("/scores/stream")
     async def scores_stream(fixture_id: Optional[int] = Query(default=None, alias="fixtureId")):
         return EventSourceResponse(_scores_events(fixture_id))
+
+    app.mount(
+        "/",
+        StaticFiles(directory=Path(__file__).parent / "static", html=True),
+        name="static",
+    )
 
     return app
 
