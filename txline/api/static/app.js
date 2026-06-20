@@ -109,3 +109,61 @@ function render() {
     </tr>
   `).join('')
 }
+
+// --- Startup ---
+
+async function init() {
+  // Fetch fixture names for name resolution (non-fatal on failure)
+  try {
+    const res = await fetch('/fixtures')
+    if (res.ok) {
+      const fixtures = await res.json()
+      for (const f of fixtures) {
+        fixturesCache.set(f.FixtureId, f)
+      }
+    }
+  } catch (err) {
+    console.warn('Fixture fetch failed, running with raw IDs:', err)
+  }
+
+  // Odds stream
+  const oddsEs = new EventSource('/odds/stream')
+  oddsEs.addEventListener('odds', (e) => {
+    try {
+      const d = JSON.parse(e.data)
+      const fid = d.FixtureId
+      ensureRow(fid)
+      resolveNameFromCache(fid)
+      const row = state.get(fid)
+      row.market = d.SuperOddsType
+      row.prices = formatPrices(d.Prices, d.PriceNames)
+      row.pct = formatPct(d.Pct)
+      row.updated = timeNow()
+      flash(fid)
+      render()
+    } catch (err) {
+      console.warn('Bad odds event:', err)
+    }
+  })
+
+  // Scores stream
+  const scoresEs = new EventSource('/scores/stream')
+  scoresEs.addEventListener('scores', (e) => {
+    try {
+      const d = JSON.parse(e.data)
+      const fid = d.fixtureId
+      ensureRow(fid)
+      resolveNameFromCache(fid)
+      const row = state.get(fid)
+      row.score = parseScore(d)
+      row.gameState = d.gameState
+      row.updated = timeNow()
+      flash(fid)
+      render()
+    } catch (err) {
+      console.warn('Bad scores event:', err)
+    }
+  })
+}
+
+init()
